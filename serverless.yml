@@ -1,0 +1,79 @@
+service: serverless
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: dev
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:us-east-1:*:*"
+
+plugins:
+  - serverless-offline
+
+functions:
+  create:
+    handler: src/todos/create.handler
+    events:
+      - http:
+          path: /todos
+          method: POST
+          cors: true
+  todos:
+    handler: src/todos/list.handler
+    events:
+      - http:
+          path: /todos
+          method: GET
+          cors: true
+  todo:
+    handler: src/todos/get.handler
+    events:
+      - http:
+          path: /todos/{id}
+          method: GET
+          cors: true
+          request:
+            parameters:
+              id: true
+  update:
+    handler: src/todos/update.handler
+    events:
+      - http:
+          path: todos/{id}
+          method: PUT
+          cors: true
+  delete:
+    handler: src/todos/delete.handler
+    events:
+      - http:
+          path: todos/{id}
+          method: DELETE
+          cors: true
+
+resources:
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: 'todos'
